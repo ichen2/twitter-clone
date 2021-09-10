@@ -26,7 +26,7 @@ const username = "timtamlvr2"
 const name = "ian chen"
 
 const topics: Topic[] = [
-  {title: "COVID-19", subtitle: "Joe Biden unveils a new vaccine mandate for federal employees, tells anti-vaxxers to 'Suck his white balls'.", context: "#Vaccines"},
+  {title: "COVID-19", subtitle: "Joe Biden unveils a new vaccine mandate for federal employees and business with over 100 employees.", context: "#Vaccines"},
   {title: "CLB", subtitle: "Fans discuss Drake's new album, Certified Lover Boy. Spoiler: it's trash.", context: "#Akademiks"},
   {title: "21", subtitle: "Twitter users anticipate 9/10/21, a colloquial holiday based on a 2014 Vine."},
 ]
@@ -52,19 +52,32 @@ export type UserProps = {
 }
 
 const NavigationBar : React.FC<UserProps> = ({name, username}) => {
+  const navigationOptions: string[] = [
+    "Home",
+    "Explore",
+    "Notifications",
+    "Messages",
+    "Bookmarks",
+    "Lists",
+    "Profile",
+    "More",
+  ]
+  const [currentNavigationOption, setCurrentNavigationOption] = React.useState(0)
   return (
     <View style={styles.navigationBar}>
       <View style={styles.navigationListWrapper}>
         <View style={styles.navigationList}>
           <Image style={{ width: 32, height: 32, marginBottom: 32}} resizeMode='contain' source={require('./assets/twitter.png')} />
-          <Text style={styles.bodyTextLarge}>Home</Text>
-          <Text style={styles.bodyTextLarge}>Explore</Text>
-          <Text style={styles.bodyTextLarge}>Notifications</Text>
-          <Text style={styles.bodyTextLarge}>Messages</Text>
-          <Text style={styles.bodyTextLarge}>Bookmarks</Text>
-          <Text style={styles.bodyTextLarge}>Lists</Text>
-          <Text style={styles.bodyTextLarge}>Profile</Text>
-          <Text style={styles.bodyTextLarge}>More</Text>
+          <FlatList
+            data={navigationOptions}
+            renderItem={({item, index})=>
+              <Text 
+                style={index == currentNavigationOption ? styles.headerTextLarge : styles.bodyTextLarge}
+                onPress={() => setCurrentNavigationOption(index)}>
+                  {item}
+              </Text>
+            }
+          />
           <Pressable style={styles.tweetButtonLarge}>
             <Text style={styles.tweetButtonLargeText}>Tweet</Text>
           </Pressable>
