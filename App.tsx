@@ -1,6 +1,6 @@
 import { time } from 'console';
 import React from 'react';
-import { ViewStyle, FlatList, StyleSheet, Text, View, Image, Button, Pressable, TextInput } from 'react-native';
+import { ViewStyle, ScrollView, FlatList, StyleSheet, Text, View, Image, Button, Pressable, TextInput } from 'react-native';
 
 const colors = {
   white: '#FFFFFF',
@@ -22,12 +22,31 @@ interface Tweet {
   content: string,
 }
 
+interface UserProps {
+  name: String,
+  username: String
+}
+
+interface TimelineProps {
+  tweets: Tweet[]
+  setTweets: Function
+}
+
+interface TweetDialogProps {
+  setTweetDialogVisible: Function
+}
+
+interface TweetComposerProps {
+  tweetDraftText: string,
+  setTweetDraftText: Function,
+}
+
 const username = "timtamlvr2"
 const name = "ian chen"
 
 const topics: Topic[] = [
   {title: "COVID-19", subtitle: "Joe Biden unveils a new vaccine mandate for federal employees and business with over 100 employees.", context: "#Vaccines"},
-  {title: "CLB", subtitle: "Fans discuss Drake's new album, Certified Lover Boy. Spoiler: it's trash.", context: "#Akademiks"},
+  {title: "CLB", subtitle: "Fans discuss Drake's new album, Certified Lover Boy. Spoiler: it's trash.", context: "#Donda"},
   {title: "21", subtitle: "Twitter users anticipate 9/10/21, a colloquial holiday based on a 2014 Vine."},
 ]
 
@@ -35,23 +54,82 @@ const initialTweets: Tweet[] = [
   {name: name, username: username, content: "Hello Twitter!"}
 ]
 
-export default function App() {
+const Spacer : React.FC<{width?: number, height?: number}> = (props) => {
+  return <View style={{width: props.width, height: props.height}} />
+}
+
+const TweetComposer: React.FC<TimelineProps & TweetDialogProps> = (props) => {
+
+  const [tweetDraftText, setTweetDraftText] = React.useState("")
+  let tweetComposer: TextInput
 
   return (
-    <View style={styles.container}>
-      <NavigationBar name={name} username={username}/>
-      <HomeTimeline />
-      <DiscoveryBar />
+    <View style={styles.tweetComposerLayout}>
+      <Image style={{ width: 56, height: 56, borderRadius: 28}} resizeMode='contain' source={require('./assets/profile.png')} />
+      <TextInput 
+        ref={input => { if(input) tweetComposer = input }} 
+        style={styles.tweetComposer} 
+        multiline={true}
+        onChangeText={text => setTweetDraftText(text)}
+        placeholder="What's Happening?"
+      />
+      <Pressable 
+        style={styles.tweetButtonSmall}
+        onPress={() => {
+          props.setTweets(tweetDraftText)
+          props.setTweetDialogVisible()
+          setTweetDraftText("")
+          tweetComposer.clear()
+        }}
+      >
+        <Text style={styles.tweetButtonLargeText}>Tweet</Text>
+      </Pressable>
     </View>
-  );
+  )
 }
 
-export type UserProps = {
-  name: String,
-  username: String
+const CreateTweetDialog : React.FC<TimelineProps & TweetDialogProps> = (props) => {
+  return (
+    <View style={styles.centeredScreenLayout}>
+      <View style={styles.createTweetDialog}>
+        <Text style={styles.headerTextSmall} onPress={() => {props.setTweetDialogVisible()}}>{"\u2715"}</Text>
+        <TweetComposer tweets={props.tweets} setTweets={props.setTweets} setTweetDialogVisible={props.setTweetDialogVisible} />
+      </View>
+    </View>
+  )
 }
 
-const NavigationBar : React.FC<UserProps> = ({name, username}) => {
+const TopicCardView: React.FC<{topic: Topic, style?: ViewStyle}> = (props) => {
+  return (
+    <View style={props.style}>
+      <Text style={styles.bodySubTextSmall}>{"#" + props.topic.title}</Text>
+      <Text style={styles.headerTextSmall}>{props.topic.subtitle}</Text>
+      <Text style={styles.bodySubTextSmall}>{props.topic.context ? "Trending with: " + props.topic.context : undefined}</Text>
+    </View>
+  )
+}
+
+const TweetView: React.FC<{tweet: Tweet, style?: ViewStyle}> = (props) => {
+  return (
+    <View style={styles.tweet}>
+      <View style={{flexDirection: 'row'}}>
+        <Text style={styles.headerTextSmall}>
+          {props.tweet.name}
+        </Text>
+        <Spacer width={8} />
+        <Text style={styles.bodySubTextSmall}>
+          {"@" + props.tweet.username}
+        </Text>
+      </View>
+      <Spacer height={4} />
+      <Text style={styles.bodyTextSmall}>
+        {props.tweet.content}
+      </Text>
+    </View>
+  )
+}
+
+const NavigationBar : React.FC<TweetDialogProps> = (props) => {
   const navigationOptions: string[] = [
     "Home",
     "Explore",
@@ -65,8 +143,8 @@ const NavigationBar : React.FC<UserProps> = ({name, username}) => {
   const [currentNavigationOption, setCurrentNavigationOption] = React.useState(0)
   return (
     <View style={styles.navigationBar}>
-      <View style={styles.navigationListWrapper}>
-        <View style={styles.navigationList}>
+      <View style={styles.navigationList}>
+        <View>
           <Image style={{ width: 32, height: 32, marginBottom: 32}} resizeMode='contain' source={require('./assets/twitter.png')} />
           <FlatList
             data={navigationOptions}
@@ -78,19 +156,41 @@ const NavigationBar : React.FC<UserProps> = ({name, username}) => {
               </Text>
             }
           />
-          <Pressable style={styles.tweetButtonLarge}>
+          <Pressable style={styles.tweetButtonLarge} onPress={() => { props.setTweetDialogVisible() }}>
             <Text style={styles.tweetButtonLargeText}>Tweet</Text>
           </Pressable>
         </View>
-        <View style={{flexDirection: 'row'}}>
-          <Image style={{ width: 40, height: 40, borderRadius: 20}} resizeMode='contain' source={require('./assets/profile.png')} />
-          <Spacer width={12} />
-          <View style={{flexDirection: 'column'}}>
-            <Text style={styles.headerTextSmall}>{name}</Text>
-            <Text style={styles.bodySubTextSmall}>{username}</Text>
+        <View style={{flexDirection: 'column', flex: 1, justifyContent: 'flex-end'}}>
+          <View style={{flexDirection: 'row'}}>
+            <Image style={{ width: 40, height: 40, borderRadius: 20}} resizeMode='contain' source={require('./assets/profile.png')} />
+            <Spacer width={12} />
+            <View style={{flexDirection: 'column'}}>
+              <Text style={styles.headerTextSmall}>{name}</Text>
+              <Text style={styles.bodySubTextSmall}>{username}</Text>
+            </View>
           </View>
         </View>
       </View>
+    </View>
+  )
+}
+
+const HomeTimeline : React.FC<TimelineProps> = (props) => {
+
+  return (
+    <View style={styles.homeTimeline}>
+      <View style={styles.homeTimelineHeader}>
+        <Text style={[styles.headerTextLarge, {paddingBottom: 0}]}>Home</Text>
+      </View>
+      <ScrollView>
+        <TweetComposer 
+          tweets={props.tweets} setTweets={props.setTweets} 
+        />
+        <FlatList
+          data={props.tweets}
+          renderItem={({item})=><TweetView key={item.content} tweet={item} />}
+        />
+      </ScrollView>
     </View>
   )
 }
@@ -118,86 +218,37 @@ const DiscoveryBar : React.FC = () => {
   )
 }
 
-const TopicCardView: React.FC<{topic: Topic, style?: ViewStyle}> = (props) => {
-  return (
-    <View style={props.style}>
-      <Text style={styles.bodySubTextSmall}>{"#" + props.topic.title}</Text>
-      <Text style={styles.headerTextSmall}>{props.topic.subtitle}</Text>
-      <Text style={styles.bodySubTextSmall}>{props.topic.context ? "Trending with: " + props.topic.context : undefined}</Text>
-    </View>
-  )
-}
-
-const HomeTimeline : React.FC = () => {
-
+export default function App() {
   const [tweets, setTweets] = React.useState<Tweet[]>(initialTweets)
-  const [tweetDraftText, setTweetDraftText] = React.useState("")
-  let tweetComposer
-  return (
-    <View style={styles.homeTimeline}>
-      <View style={styles.homeTimelineHeader}>
-        <Text style={[styles.headerTextLarge, {paddingBottom: 0}]}>Home</Text>
-      </View>
-      <View style={styles.tweetComposerLayout}>
-        <Image style={{ width: 64, height: 64, borderRadius: 32}} resizeMode='contain' source={require('./assets/profile.png')} />
-        <TextInput 
-          ref={input => { tweetComposer = input }} 
-          style={styles.tweetComposer} 
-          multiline={true}
-          onChangeText={text => setTweetDraftText(text)}
-          placeholder="What's Happening?"
-        />
-        <Pressable 
-          style={styles.tweetButtonSmall}
-          onPress={() => {
-            setTweets(prevTweets => [{name: name, username: name, content: tweetDraftText}, ...prevTweets])
-            setTweetDraftText("")
-            tweetComposer.clear()
-          }}
-        >
-          <Text style={[styles.tweetButtonLargeText, {color: colors.white}]}>Tweet</Text>
-        </Pressable>
-      </View>
-      <FlatList
-        data={tweets}
-        renderItem={({item})=><TweetView key={item.content} tweet={item} />}
-      />
-    </View>
-  )
-}
+  const [tweetDialogVisible, setTweetDialogVisible] = React.useState(false)
 
-const TweetView: React.FC<{tweet: Tweet, style?: ViewStyle}> = (props) => {
-  return (
-    <View style={styles.tweet}>
-      <View style={{flexDirection: 'row'}}>
-        <Text style={styles.headerTextSmall}>
-          {props.tweet.name}
-        </Text>
-        <Spacer width={8} />
-        <Text style={styles.bodySubTextSmall}>
-          {"@" + props.tweet.username}
-        </Text>
-      </View>
-      <Spacer height={4} />
-      <Text style={styles.bodyTextSmall}>
-        {props.tweet.content}
-      </Text>
-    </View>
-  )
-}
+  const updateTweets = (tweetDraftText: string) => {
+    setTweets(prevTweets => [{name: name, username: username, content: tweetDraftText}, ...prevTweets])
+  }
 
-const Spacer : React.FC<{width?: number, height?: number}> = (props) => {
-  return <View style={{width: props.width, height: props.height}} />
+  const toggleTweetDialogVisible = () => {
+    setTweetDialogVisible(prevVisibility => !prevVisibility)
+  }
+
+  return (
+    <View style={styles.container}>
+      <NavigationBar setTweetDialogVisible={toggleTweetDialogVisible} />
+      <HomeTimeline tweets={tweets} setTweets={updateTweets} />
+      <DiscoveryBar />
+      {
+        tweetDialogVisible && 
+        <CreateTweetDialog tweets={tweets} setTweets={updateTweets} setTweetDialogVisible={toggleTweetDialogVisible} />
+      }
+    </View>
+  );
 }
 
 const timelinePadding = 16
+const timelineWidth = '42%'
+const navigationBarWidth = '25%'
+const discoveryBarWidth = '33%'
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    flexDirection: 'row',
-    backgroundColor: colors.black,
-  },
   bodyTextSmall: {
     color: colors.white,
     fontSize: 14,
@@ -239,29 +290,46 @@ const styles = StyleSheet.create({
   tweetButtonLargeText: {
     marginVertical: 'auto',
     textAlign: 'center',
-    color: colors.black,
+    color: colors.white,
     fontSize: 16,
     fontWeight: 'bold',
   },
-
+  container: {
+    height: '100vh',
+    backgroundColor: colors.black,
+  },
+  centeredScreenLayout: {
+    backgroundColor: 'rgba(256, 256, 256, .2)',
+    position: 'absolute', 
+    start: 0, 
+    end: 0, 
+    top: 0, 
+    bottom: 0, 
+    alignItems: 'center', 
+    justifyContent: 'center'
+  },
+  createTweetDialog : {
+    borderRadius: 20,
+    backgroundColor: colors.black,
+    padding: 20,
+  },
   navigationBar: {
+    position: 'absolute',
     borderRightWidth: 1,
     borderRightColor: colors.darkGrey,
-    flex: 3,
-  },
-  navigationListWrapper: {
-    marginLeft: 108,
-    marginVertical: 20,
-    flex: 1,
-    flexDirection: 'column'
+    width: navigationBarWidth,
+    height: '100vh',
   },
   navigationList: {
+    marginLeft: 108,
+    marginVertical: 20,
+    flexDirection: 'column',
     flex: 1,
-    alignSelf: 'stretch',
   },
-
   homeTimeline: {
-    flex: 5,
+    left: navigationBarWidth,
+    width: timelineWidth,
+    height: '100vh',
   },
   homeTimelineHeader: {
     padding: timelinePadding,
@@ -289,9 +357,12 @@ const styles = StyleSheet.create({
   },
 
   discoveryBar: {
+    position: 'absolute',
+    width: discoveryBarWidth,
+    height: '100vh',
+    right: 0,
     borderLeftWidth: 1,
     borderLeftColor: colors.darkGrey,
-    flex: 4,
   },
   discoverBarWrapper: {
     marginLeft: 32,
