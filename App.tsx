@@ -2,6 +2,15 @@ import { time } from 'console';
 import React from 'react';
 import { ViewStyle, ScrollView, FlatList, StyleSheet, Text, View, Image, Button, Pressable, TextInput } from 'react-native';
 
+{ 
+  /* 
+  TODO: 
+  Add disabled button state visual
+  Add tweet character count indicator
+  Make discovery bar scrollable
+  */ 
+}
+
 const colors = {
   white: '#FFFFFF',
   black: '#000000',
@@ -59,9 +68,11 @@ const Spacer : React.FC<{width?: number, height?: number}> = (props) => {
 }
 
 const TweetComposer: React.FC<TimelineProps & TweetDialogProps> = (props) => {
-
   const [tweetDraftText, setTweetDraftText] = React.useState("")
   let tweetComposer: TextInput
+  const tweetIsValid = () => {
+    return tweetDraftText.length > 0 && tweetDraftText.length <= 280
+  }
 
   return (
     <View style={styles.tweetComposerLayout}>
@@ -74,6 +85,7 @@ const TweetComposer: React.FC<TimelineProps & TweetDialogProps> = (props) => {
         placeholder="What's Happening?"
       />
       <Pressable 
+        disabled={!tweetIsValid()}
         style={styles.tweetButtonSmall}
         onPress={() => {
           props.setTweets(tweetDraftText)
@@ -92,8 +104,11 @@ const CreateTweetDialog : React.FC<TimelineProps & TweetDialogProps> = (props) =
   return (
     <View style={styles.centeredScreenLayout}>
       <View style={styles.createTweetDialog}>
-        <Text style={styles.headerTextSmall} onPress={() => {props.setTweetDialogVisible()}}>{"\u2715"}</Text>
+        <View style={styles.createTweetDialogHeader}>
+          <Text style={styles.headerTextSmall} onPress={() => {props.setTweetDialogVisible()}}>{"\u2715"}</Text>
+        </View>
         <TweetComposer tweets={props.tweets} setTweets={props.setTweets} setTweetDialogVisible={props.setTweetDialogVisible} />
+        <View style={styles.createTweetDialogFooter}></View>
       </View>
     </View>
   )
@@ -184,7 +199,7 @@ const HomeTimeline : React.FC<TimelineProps> = (props) => {
       </View>
       <ScrollView>
         <TweetComposer 
-          tweets={props.tweets} setTweets={props.setTweets} 
+          tweets={props.tweets} setTweets={props.setTweets} setTweetDialogVisible={()=>{}}
         />
         <FlatList
           data={props.tweets}
@@ -207,11 +222,13 @@ const DiscoveryBar : React.FC = () => {
             defaultValue={searchBarText}
           />
         <View style={styles.sidebarCard}>
-          <Text style={styles.headerTextLarge}>What's Happening</Text>
-          <FlatList
-            data={topics}
-            renderItem={({item, index})=><TopicCardView key={item.title} topic={item} style={index > 0 ? {paddingTop: 20} : {}}/>}
-          />
+          <ScrollView>
+            <Text style={styles.headerTextLarge}>What's Happening</Text>
+            <FlatList
+              data={topics}
+              renderItem={({item, index})=><TopicCardView key={item.title} topic={item} style={index > 0 ? {paddingTop: 20} : {}}/>}
+            />
+          </ScrollView>
         </View>
       </View>
     </View>
@@ -280,6 +297,13 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     backgroundColor: colors.blue,
   },
+  tweetButtonSmallDisabled: {
+    marginStart: 8,
+    width: 80,
+    height: 40,
+    borderRadius: 24,
+    backgroundColor: colors.blue,
+  },
   tweetButtonLarge: {
     width: 200,
     height: 48,
@@ -311,6 +335,13 @@ const styles = StyleSheet.create({
   createTweetDialog : {
     borderRadius: 20,
     backgroundColor: colors.black,
+  },
+  createTweetDialogHeader: {
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.darkGrey,
+  },
+  createTweetDialogFooter: {
     padding: 20,
   },
   navigationBar: {
